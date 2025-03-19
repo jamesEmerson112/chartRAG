@@ -2,6 +2,9 @@ from flask import Flask, request, jsonify, render_template, flash, redirect, url
 import pandas as pd
 from openai import OpenAI
 import os
+from dotenv import load_dotenv
+
+load_dotenv()
 import secrets
 import re       # Regular expressions for markdown conversion (String -> html)
 
@@ -28,7 +31,7 @@ def details():
     prompt=f"""output the relevant data in html table format: {description}.
     Start with the table itself, with nothing else.
     Also, round the numbers two decimal places."""
-    
+
     # Generate table with OpenAI
     tableResponse = client.chat.completions.create(
         model="gpt-4o",
@@ -53,7 +56,7 @@ def upload_file():
     prompt=f"""output the relevant data in html table format: {description}.
     Start with the table itself, with nothing else.
     Also, round the numbers two decimal places."""
-    
+
     # Generate table with OpenAI
     summary = client.chat.completions.create(
         model="gpt-4o",
@@ -74,7 +77,7 @@ def ask_question():
         return jsonify({'error': 'No data loaded'}), 400
     description = data_df.describe().to_string()
     prompt=f"Question: {question}\n\nData Summary:\n{description}\n\nAnswer:"
-    
+
     # Simulating a response based on data summary, you could extend this to use OpenAI based on user questions
     response = client.chat.completions.create(
         model="gpt-4o",
@@ -97,11 +100,11 @@ def markdown_to_html(markdown_text):
     # Convert bold text
     markdown_text = re.sub(r'\*\*(.+?)\*\*', r'<b>\1</b>', markdown_text)
     # markdown_text = re.sub(r'__(.+?)__', r'<b>\1</b>', markdown_text)
-    
+
     # Convert italic text
     markdown_text = re.sub(r'\*(.+?)\*', r'<i>\1</i>', markdown_text)
     # markdown_text = re.sub(r'_(.+?)_', r'<i>\1</i>', markdown_text)
-    
+
     # Convert new lines
     markdown_text = re.sub(r'\n', r'<br>', markdown_text)
 
@@ -111,11 +114,11 @@ def markdown_table_to_html(markdown_text):
     # Convert bold text
     markdown_text = re.sub(r'\*\*(.+?)\*\*', r'<b>\1</b>', markdown_text)
     # markdown_text = re.sub(r'__(.+?)__', r'<b>\1</b>', markdown_text)
-    
+
     # Convert italic text
     markdown_text = re.sub(r'\*(.+?)\*', r'<i>\1</i>', markdown_text)
     # markdown_text = re.sub(r'_(.+?)_', r'<i>\1</i>', markdown_text)
-    
+
     # Convert tables
     def convert_table(match):
         table = match.group(0)
@@ -123,15 +126,15 @@ def markdown_table_to_html(markdown_text):
         header = rows[0].split('|')[1:-1]
         header_html = ''.join([f'<th>{col.strip()}</th>' for col in header])
         header_html = f'<tr>{header_html}</tr>'
-        
+
         body_html = ''
         for row in rows[2:]:
             cols = row.split('|')[1:-1]
             row_html = ''.join([f'<td>{col.strip()}</td>' for col in cols])
             body_html += f'<tr>{row_html}</tr>'
-        
+
         return f'<table>{header_html}{body_html}</table>'
-    
+
     markdown_text = re.sub(r'```html([\s\S]+?)```', r'\1', markdown_text)
 
 
