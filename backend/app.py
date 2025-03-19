@@ -3,6 +3,7 @@ import pandas as pd
 from openai import OpenAI
 import os
 from dotenv import load_dotenv
+load_dotenv()
 import secrets
 import re       # Regular expressions for markdown conversion (String -> html)
 from flask_cors import CORS
