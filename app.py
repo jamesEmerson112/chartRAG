@@ -4,6 +4,9 @@ from openai import OpenAI
 import os
 import secrets
 import re       # Regular expressions for markdown conversion (String -> html)
+from dotenv import load_dotenv
+
+load_dotenv()
 
 secret = secrets.token_urlsafe(32)
 
@@ -36,14 +39,14 @@ def upload_file():
     data_df = pd.read_csv(file)
     description = data_df.describe().to_string()
     prompt=f"Summarize this data: {description}"
-    
+
     # Generate summary with OpenAI
     summary = client.chat.completions.create(
         model="gpt-4o",
         messages=[{"role": "user", "content": prompt}],
         max_tokens=1000
     )
-    
+
     flash(summary.choices[0].message.content)  # Use flash to pass data to another route
     return redirect('/details')
 
@@ -58,7 +61,7 @@ def ask_question():
         return jsonify({'error': 'No data loaded'}), 400
     description = data_df.describe().to_string()
     prompt=f"Question: {question}\n\nData Summary:\n{description}\n\nAnswer:"
-    
+
     # Simulating a response based on data summary, you could extend this to use OpenAI based on user questions
     response = client.chat.completions.create(
         model="gpt-4o",
@@ -77,15 +80,15 @@ def markdown_to_html(markdown_text):
     markdown_text = re.sub(r'### (.+)', r'<h3>\1</h3>', markdown_text)
     markdown_text = re.sub(r'## (.+)', r'<h2>\1</h2>', markdown_text)
     markdown_text = re.sub(r'# (.+)', r'<h1>\1</h1>', markdown_text)
-    
+
     # Convert bold text
     markdown_text = re.sub(r'\*\*(.+?)\*\*', r'<b>\1</b>', markdown_text)
     markdown_text = re.sub(r'__(.+?)__', r'<b>\1</b>', markdown_text)
-    
+
     # Convert italic text
     markdown_text = re.sub(r'\*(.+?)\*', r'<i>\1</i>', markdown_text)
     markdown_text = re.sub(r'_(.+?)_', r'<i>\1</i>', markdown_text)
-    
+
     # Convert new lines
     markdown_text = re.sub(r'\n', r'<br>', markdown_text)
 
