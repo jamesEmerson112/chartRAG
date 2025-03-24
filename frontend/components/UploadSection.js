@@ -55,10 +55,7 @@ export default function UploadSection({ summary, setSummary }) {
   };
 
   return (
-    <div className="mb-8 bg-background text-foreground">
-      <p className="text-lg mb-8 text-center">
-        Upload a csv file and our ai will summarise for you
-      </p>
+    <div className="">
       <input type="file" accept=".csv" onChange={handleFileChange} />
       <button
         onClick={handleUpload}
