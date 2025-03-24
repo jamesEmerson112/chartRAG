@@ -126,3 +126,4 @@ dmypy.json
 # Cython debug symbols
 cython_debug/
 backend/graph_debug.html
+backend/graph_debug.html

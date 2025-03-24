@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useRef, useEffect } from "react";
+import GraphDisplay from "./GraphDisplay";
 
 /**
  * UploadSection component allows users to upload a CSV file
@@ -13,10 +14,12 @@ export default function UploadSection({ summary, setSummary }) {
   const [file, setFile] = useState(null);
   const [isUploading, setIsUploading] = useState(false);
   const [details, setDetails] = useState(null);
+  const [isFetchingDetails, setIsFetchingDetails] = useState(false);
   const fileInputRef = useRef(null);
+  const bodyRegex = new RegExp("<body[^>]*>([\\s\\S]*?)</body>", "i");
 
   const extractBodyContent = (html) => {
-    const match = html.match(/<body[^>]*>([\s\S]*?)<\/body>/i);
+    const match = html.match(bodyRegex);
     return match ? match[1] : html;
   };
 
@@ -42,7 +45,7 @@ export default function UploadSection({ summary, setSummary }) {
   const handleUpload = async (selectedFile) => {
     const uploadFile = selectedFile || file;
     if (!uploadFile) {
-      alert("Please select a file first.");
+      alert('Please select a file first.');
       return;
     }
     const formData = new FormData();
@@ -50,7 +53,7 @@ export default function UploadSection({ summary, setSummary }) {
 
     setIsUploading(true);
     try {
-    const response = await fetch("http://127.0.0.1:5000/upload", {
+      const response = await fetch("http://127.0.0.1:5000/upload", {
         method: "POST",
         body: formData,
       });
@@ -82,6 +85,7 @@ export default function UploadSection({ summary, setSummary }) {
   useEffect(() => {
     if (summary && !details) {
       const timer = setTimeout(async () => {
+        setIsFetchingDetails(true);
         try {
           const detailsResponse = await fetch("http://127.0.0.1:5000/details");
           if (detailsResponse.ok) {
@@ -95,6 +99,8 @@ export default function UploadSection({ summary, setSummary }) {
           }
         } catch (error) {
           console.error("Error fetching details:", error);
+        } finally {
+          setIsFetchingDetails(false);
         }
       }, 1000);
       return () => clearTimeout(timer);
@@ -102,57 +108,48 @@ export default function UploadSection({ summary, setSummary }) {
   }, [summary, details]);
 
   return (
-    <div className="flex items-center space-x-4">
-      <input
-        type="file"
-        accept=".csv"
-        ref={fileInputRef}
-        onChange={handleFileChange}
-        className="hidden"
-      />
-      {!summary && (
-        <>
+    <div className="flex flex-col">
+      <div className="flex items-center space-x-4">
+        <input
+          type="file"
+          accept=".csv"
+          ref={fileInputRef}
+          onChange={handleFileChange}
+          className="hidden"
+        />
+        {!summary && (
           <button
             onClick={handleButtonClick}
             className="ml-2 px-4 py-2 bg-blue-600 hover:bg-blue-800 text-white rounded transform transition duration-250 hover:scale-95"
           >
             Upload
           </button>
-        </>
-      )}
-      {isUploading && (
-        <div className="ml-4 w-6 h-6 border-4 border-blue-600 border-t-transparent border-l-transparent rounded-full animate-spin"></div>
-      )}
-      {summary && details ? (
-        <div className="mt-4 grid grid-cols-2 gap-4">
-          <div>
-            <h3 className="text-lg font-semibold">Summary:</h3>
-            <p className="whitespace-pre-wrap">{summary}</p>
-          </div>
-          <div>
-            <h3 className="text-lg font-semibold">Graph:</h3>
-              <p>Graph HTML body is printed in console.</p>
-            <h3 className="text-lg font-semibold mt-4">Data Table:</h3>
-            <div dangerouslySetInnerHTML={{ __html: details.table }} />
-          </div>
+        )}
+        {isUploading && (
+          <div className="ml-4 w-6 h-6 border-4 border-blue-600 border-t-transparent border-l-transparent rounded-full animate-spin"></div>
+        )}
+      </div>
+      {isFetchingDetails && (
+        <div className="mt-4 flex items-center">
+          <div className="w-6 h-6 border-4 border-green-600 border-t-transparent border-l-transparent rounded-full animate-spin"></div>
+          <span className="ml-2">Loading details...</span>
         </div>
-      ) : (
-        <>
-          {summary && (
-            <div className="mt-4">
+      )}
+      {details && (
+        <div className="mt-4 w-full h-screen">
+          <div className="grid grid-cols-2 gap-4 h-full">
+            <div className="p-4">
               <h3 className="text-lg font-semibold">Summary:</h3>
               <p className="whitespace-pre-wrap">{summary}</p>
             </div>
-          )}
-          {details && (
-            <div className="mt-4">
-              <h3 className="text-lg font-semibold">Graph:</h3>
-              <p>Graph HTML body is printed in console.</p>
+            <div className="overflow-auto p-4 border-l">
+              <GraphDisplay graphHtml={details.graph_html} />
               <h3 className="text-lg font-semibold mt-4">Data Table:</h3>
               <div dangerouslySetInnerHTML={{ __html: details.table }} />
             </div>
-          )}
-        </>
+          </div>
+        </div>
       )}
     </div>
   );
+}
