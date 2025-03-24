@@ -11,6 +11,7 @@ import { useState, useRef } from "react";
  */
 export default function UploadSection({ summary, setSummary }) {
   const [file, setFile] = useState(null);
+  const [isUploading, setIsUploading] = useState(false);
   const fileInputRef = useRef(null);
 
   /**
@@ -41,6 +42,7 @@ export default function UploadSection({ summary, setSummary }) {
     const formData = new FormData();
     formData.append("datafile", uploadFile);
 
+    setIsUploading(true);
     try {
       const response = await fetch("http://127.0.0.1:5000/upload", {
         method: "POST",
@@ -56,6 +58,8 @@ export default function UploadSection({ summary, setSummary }) {
     } catch (error) {
       console.error("Error:", error);
       alert('An error occurred while uploading the file.');
+    } finally {
+      setIsUploading(false);
     }
   };
 
@@ -84,6 +88,9 @@ export default function UploadSection({ summary, setSummary }) {
       >
         Upload
       </button>
+      {isUploading && (
+        <div className="ml-4 w-6 h-6 border-4 border-blue-600 border-t-transparent border-l-transparent rounded-full animate-spin"></div>
+      )}
       {summary && (
         <div className="mt-4">
           <h3 className="text-lg font-semibold">Summary:</h3>
