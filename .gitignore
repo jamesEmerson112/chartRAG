@@ -6,6 +6,13 @@ __pycache__/
 # C extensions
 *.so
 
+# Front end
+node_modules/
+dist/
+build/
+public/
+src/assets/
+
 # Distribution / packaging
 .Python
 env/
