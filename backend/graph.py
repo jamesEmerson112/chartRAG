@@ -1,6 +1,7 @@
 import plotly.express as px
 import pandas as pd
-import openai
+from openai import OpenAI
+
 
 import os
 from dotenv import load_dotenv
@@ -93,7 +94,7 @@ def get_graph_recommendation(data):
         f"Here are your responce options: {CHART_OPTIONS} but you cannot use these options: {invalid_chart_types}. "
         "only use one word from the list as your response"
     )
-    response = openai.chat.completions.create(
+    response = client.chat.completions.create(
         model="gpt-4o",
         messages=[{"role": "user", "content": prompt}],
         max_tokens=150
@@ -111,7 +112,7 @@ def get_graph_recommendation(data):
         invalid_chart_types.append(response.choices[0].message.content)
         print(invalid_chart_types)
         # Recursively try again if validation fails.
-        get_graph_recommendation(data)
+        return get_graph_recommendation(data)
 
 
 def validate_graph_type(data, graph_type):
@@ -207,7 +208,7 @@ def validate_graph_type(data, graph_type):
         f"Does the data meet these requirements for a {graph_type}: {requirements}? "
         f"Here is the data {data}. Provide a yes or no answer without extra characters, do not put a period."
     )
-    response = openai.chat.completions.create(
+    response = client.chat.completions.create(
         model="gpt-4o",
         messages=[{"role": "user", "content": prompt}],
         max_tokens=150
@@ -257,13 +258,15 @@ def find_best_columns(data, graph_type):
         "(Ex: column_name, column_name, column_name) infering that if it's only two columns that the format is x y and if there's only one needed just state the name of the column without any other characters in the answer. "
         "do not put the answer in quotes or add a period"
     )
-    response = openai.chat.completions.create(
+    response = client.chat.completions.create(
         model="gpt-4o",
         messages=[{"role": "user", "content": prompt}],
         max_tokens=150
     )
     print(response.choices[0].message.content)
     columns = response.choices[0].message.content.strip()
+    if columns.lower() == "none":
+        return None, None
     print(columns)
     columns_list = columns.split(", ")
     return columns_list
@@ -285,8 +288,7 @@ def generate_graph(data, graph_type):
     """
     columns = find_best_columns(data, graph_type)
     invalid_chart_types.clear()
-
-    if not columns:
+    if columns is None or columns[0] is None:
         print("No suitable columns found for the graph type")
         return None
 
@@ -315,7 +317,10 @@ def generate_graph(data, graph_type):
     elif graph_type == "Histogram":
         fig = px.histogram(data, x=data[x_axis], title=title)
     elif graph_type == "Scatterplot":
-        slope, intercept = np.polyfit(data[x_axis], data[y_axis], 1)
+        # Convert the x_axis and y_axis data to numeric values to avoid type errors
+        x_data = pd.to_numeric(data[x_axis], errors='coerce')
+        y_data = pd.to_numeric(data[y_axis], errors='coerce')
+        slope, intercept = np.polyfit(x_data, y_data, 1)
         line = slope * data[x_axis] + intercept
         fig = px.scatter(data, x=data[x_axis], y=data[y_axis], title=title)
         fig.add_trace(go.Scatter(x=data[x_axis], y=line, mode="lines", name="Trendline", line=dict(color="red")))

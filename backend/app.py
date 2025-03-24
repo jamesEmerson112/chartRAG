@@ -6,6 +6,7 @@ from dotenv import load_dotenv
 load_dotenv()
 import secrets
 import re       # Regular expressions for markdown conversion (String -> html)
+from plotly.graph_objects import Figure
 from flask_cors import CORS
 from graph import generate_graph, get_graph_recommendation
 
@@ -37,10 +38,10 @@ summary_content = None
 # Endpoint to generate HTML table data and graph visualization from dataset description.
 #
 # Uses OpenAI ChatCompletion to generate a markdown table from the dataset description,
-# converts the markdown to HTML, generates a graph using generate_graph, and returns both as JSON.
+# converts the markdown to HTML, generates a graph using generate_graph, and returns both as HTML.
 #
 # Returns:
-#     JSON: Contains 'graph_html' and 'table'.
+#     An HTML page containing the graph HTML (for debugging) and the table.
 # -------------------------------------------------------------
 @app.route("/details")
 def details():
@@ -60,9 +61,20 @@ def details():
     print(description)
     print("TABLE")
     print(table)
-    fig = generate_graph(data_df, get_graph_recommendation(data_df))
+    graph_type = get_graph_recommendation(data_df)
+    fig = generate_graph(data_df, graph_type)
+    if fig is None:
+        print("Graph generation failed.")
+        return jsonify({"error": "Failed to generate graph."})
+    print("FIG")
+    print(fig)
     graph = fig
-    graph_html = fig.to_html(full_html=False, include_plotlyjs="cdn")
+    graph_html = fig.to_html(full_html=True, include_plotlyjs="cdn")
+    if graph_html:
+        print("yes there is a graph")
+    html_output = f"<html><body><h1>Graph Debug Output</h1>{graph_html}<hr><h2>Table</h2>{table}</body></html>"
+    with open("graph_debug.html", "w", encoding="utf-8") as f:
+        f.write(html_output)
     return jsonify({"graph_html": graph_html, "table": table})
 
 # -------------------------------------------------------------
@@ -126,7 +138,6 @@ def ask_question():
     )
     print("answer: ", response.choices[0].message.content)
     return jsonify({"answer": markdown_to_html(response.choices[0].message.content)})
-    # return jsonify({"answer": response.choices[0].message.content})
 
 # -------------------------------------------------------------
 # Endpoint to process a message by prepending it with 'hi '.
