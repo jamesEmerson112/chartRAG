@@ -17,7 +17,8 @@ load_dotenv()
 
 # Initialize OpenAI API key from environment variables
 api_key = os.getenv("OPENAI_API_KEY")
-openai.api_key = api_key
+client = OpenAI(api_key=api_key)
+
 
 # A list to remember graph types and data columns used in previous charts.
 chart_memory = [
@@ -242,6 +243,9 @@ def find_best_columns(data, graph_type):
 
     The function uses OpenAI's API to select columns based on the data's columns and chart requirements.
     """
+    if graph_type is None:
+        print("Graph type is None")
+        return None, None
     requirements = get_chart_requirements(graph_type.lower())
     if requirements == "Invalid Chart Type":
         return None, None

@@ -50,7 +50,7 @@ def details():
     Also, round the numbers two decimal places.
     Try your best to make the headers less than three words without losing its meaning."""
     # Generate table with OpenAI
-    tableResponse = client.ChatCompletion.create(
+    tableResponse = client.chat.completions.create(
         model="gpt-4o",
         messages=[{"role": "user", "content": prompt}],
         max_tokens=1000

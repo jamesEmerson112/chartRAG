@@ -88,7 +88,7 @@ export default function UploadSection({ summary, setSummary }) {
         } catch (error) {
           console.error("Error fetching details:", error);
         }
-      }, 10000);
+      }, 5000);
       return () => clearTimeout(timer);
     }
   }, [summary, details]);
