@@ -2,7 +2,13 @@
 
 This frontend application is built using Next.js and Tailwind CSS to provide a minimalist, user-friendly interface for uploading and analyzing CSV data. It is designed for non-technical users with a simple, clear layout and intuitive controls.
 
+
 ## Overview
+=======
+**Reminder:** Please ensure you are using the latest version of Node.js before running the following commands.
+
+First, run the development server:
+
 
 - **Minimalist Design:**
   The homepage focuses on simplicity, featuring a single, prominent upload button as the primary interactive element. Other functionalities, such as asking questions, are available through additional components but are de-emphasized to maintain clarity.
