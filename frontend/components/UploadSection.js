@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 
 /**
  * UploadSection component allows users to upload a CSV file
@@ -12,6 +12,7 @@ import { useState, useRef } from "react";
 export default function UploadSection({ summary, setSummary }) {
   const [file, setFile] = useState(null);
   const [isUploading, setIsUploading] = useState(false);
+  const [details, setDetails] = useState(null);
   const fileInputRef = useRef(null);
 
   /**
@@ -44,7 +45,7 @@ export default function UploadSection({ summary, setSummary }) {
 
     setIsUploading(true);
     try {
-      const response = await fetch("http://127.0.0.1:5000/upload", {
+    const response = await fetch("http://127.0.0.1:5000/upload", {
         method: "POST",
         body: formData,
       });
@@ -53,11 +54,11 @@ export default function UploadSection({ summary, setSummary }) {
         setSummary(data.summary || "File uploaded successfully.");
       } else {
         const data = await response.json();
-        alert(data.error || 'Error uploading file.');
+        alert(data.error || "Error uploading file.");
       }
     } catch (error) {
       console.error("Error:", error);
-      alert('An error occurred while uploading the file.');
+      alert("An error occurred while uploading the file.");
     } finally {
       setIsUploading(false);
     }
@@ -73,6 +74,25 @@ export default function UploadSection({ summary, setSummary }) {
     }
   };
 
+  useEffect(() => {
+    if (summary && !details) {
+      const timer = setTimeout(async () => {
+        try {
+          const detailsResponse = await fetch("http://127.0.0.1:5000/details");
+          if (detailsResponse.ok) {
+            const detailsData = await detailsResponse.json();
+            setDetails(detailsData);
+          } else {
+            console.error("Failed to fetch details");
+          }
+        } catch (error) {
+          console.error("Error fetching details:", error);
+        }
+      }, 10000);
+      return () => clearTimeout(timer);
+    }
+  }, [summary, details]);
+
   return (
     <div className="flex items-center space-x-4">
       <input
@@ -82,12 +102,16 @@ export default function UploadSection({ summary, setSummary }) {
         onChange={handleFileChange}
         className="hidden"
       />
-      <button
-        onClick={handleButtonClick}
-        className="ml-2 px-4 py-2 bg-blue-600 hover:bg-blue-800 text-white rounded transform transition duration-250 hover:scale-95"
-      >
-        Upload
-      </button>
+      {!summary && (
+        <>
+          <button
+            onClick={handleButtonClick}
+            className="ml-2 px-4 py-2 bg-blue-600 hover:bg-blue-800 text-white rounded transform transition duration-250 hover:scale-95"
+          >
+            Upload
+          </button>
+        </>
+      )}
       {isUploading && (
         <div className="ml-4 w-6 h-6 border-4 border-blue-600 border-t-transparent border-l-transparent rounded-full animate-spin"></div>
       )}
@@ -95,6 +119,14 @@ export default function UploadSection({ summary, setSummary }) {
         <div className="mt-4">
           <h3 className="text-lg font-semibold">Summary:</h3>
           <p className="whitespace-pre-wrap">{summary}</p>
+        </div>
+      )}
+      {details && (
+        <div className="mt-4">
+          <h3 className="text-lg font-semibold">Graph:</h3>
+          <div dangerouslySetInnerHTML={{ __html: details.graph_html }} />
+          <h3 className="text-lg font-semibold mt-4">Data Table:</h3>
+          <div dangerouslySetInnerHTML={{ __html: details.table }} />
         </div>
       )}
     </div>
