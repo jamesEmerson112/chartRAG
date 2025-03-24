@@ -80,9 +80,9 @@ export default function UploadSection({ summary, setSummary }) {
       />
       <button
         onClick={handleButtonClick}
-        className="ml-2 px-4 py-2 bg-blue-500 text-white rounded"
+        className="ml-2 px-4 py-2 bg-blue-600 hover:bg-blue-800 text-white rounded transform transition duration-250 hover:scale-95"
       >
-        Upload Data
+        Upload
       </button>
       {summary && (
         <div className="mt-4">
