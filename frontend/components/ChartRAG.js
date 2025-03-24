@@ -3,7 +3,7 @@ import UploadSection from './UploadSection';
 
 const ChartRAG = ({ summary, setSummary }) => {
   return (
-    <div className="bg-white shadow-md rounded-lg p-6 mb-4">
+<div className="min-h-[75vh] min-w-[75vw] bg-white shadow-md rounded-lg p-6 mb-4 flex flex-col justify-center items-center">
       <h1 className="text-5xl font-bold mb-4 text-center">ChartRAG</h1>
       <p className="text-lg mb-8 text-center">
         Upload a csv file and our ai will summarise for you
