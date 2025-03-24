@@ -1,22 +1,45 @@
-// frontend/components/UploadSection.js
 "use client";
 
-import { useState } from "react";
+import { useState, useRef } from "react";
 
+/**
+ * UploadSection component allows users to upload a CSV file
+ * and displays a summary of the uploaded data.
+ *
+ * @param {string} summary - The summary of the uploaded file.
+ * @param {function} setSummary - Function to update the summary state.
+ */
 export default function UploadSection({ summary, setSummary }) {
   const [file, setFile] = useState(null);
+  const fileInputRef = useRef(null);
 
+  /**
+   * Handles the file input change event.
+   * Automatically uploads the selected file.
+   *
+   * @param {object} e - The event object.
+   */
   const handleFileChange = (e) => {
-    setFile(e.target.files[0]);
+    const selectedFile = e.target.files[0];
+    if (selectedFile) {
+      setFile(selectedFile);
+      handleUpload(selectedFile);
+    }
   };
 
-  const handleUpload = async () => {
-    if (!file) {
+  /**
+   * Handles the upload process.
+   *
+   * @param {File} selectedFile - The file to upload.
+   */
+  const handleUpload = async (selectedFile) => {
+    const uploadFile = selectedFile || file;
+    if (!uploadFile) {
       alert("Please select a file first.");
       return;
     }
     const formData = new FormData();
-    formData.append("datafile", file);
+    formData.append("datafile", uploadFile);
 
     try {
       const response = await fetch("http://127.0.0.1:5000/upload", {
@@ -28,21 +51,36 @@ export default function UploadSection({ summary, setSummary }) {
         setSummary(data.summary || "File uploaded successfully.");
       } else {
         const data = await response.json();
-        alert(data.error || "Error uploading file.");
+        alert(data.error || 'Error uploading file.');
       }
     } catch (error) {
       console.error("Error:", error);
-      alert("An error occurred while uploading the file.");
+      alert('An error occurred while uploading the file.');
     }
   };
 
-      return (
-        <div className="mb-8 bg-background text-foreground">
-      <h2 className="text-xl font-semibold mb-2">Upload CSV File</h2>
-      <input type="file" accept=".csv" onChange={handleFileChange} />
+  /**
+   * Handles the button click event.
+   * Triggers the hidden file input.
+   */
+  const handleButtonClick = () => {
+    if (fileInputRef.current) {
+      fileInputRef.current.click();
+    }
+  };
+
+  return (
+    <div className="flex items-center space-x-4">
+      <input
+        type="file"
+        accept=".csv"
+        ref={fileInputRef}
+        onChange={handleFileChange}
+        className="hidden"
+      />
       <button
-        onClick={handleUpload}
-        className="ml-2 px-4 py-2 bg-blue-500 text-white rounded"
+        onClick={handleButtonClick}
+        className="ml-2 px-4 py-2 bg-blue-600 hover:bg-blue-800 text-white rounded transform transition duration-250 hover:scale-95"
       >
         Upload
       </button>

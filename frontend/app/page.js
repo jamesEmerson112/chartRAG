@@ -1,118 +1,13 @@
 "use client";
-
-import { useState } from "react";
-import UploadSection from "../components/UploadSection";
-import QuestionSection from "../components/QuestionSection";
-import MessageSection from "../components/MessageSection";
+import React, { useState } from 'react';
+import ChartRAG from '../components/ChartRAG';
 
 export default function Home() {
-  const [file, setFile] = useState(null);
-  const [summary, setSummary] = useState("");
-  const [question, setQuestion] = useState("");
-  const [answer, setAnswer] = useState("");
-
-  const [userMessage, setUserMessage] = useState("");
-  const [backendResponse, setBackendResponse] = useState("");
-
-  const handleFileChange = (e) => {
-    setFile(e.target.files[0]);
-  };
-
-  const handleUpload = async () => {
-    if (!file) {
-      alert("Please select a file first.");
-      return;
-    }
-    const formData = new FormData();
-    formData.append("datafile", file);
-
-    try {
-      const response = await fetch("http://127.0.0.1:5000/upload", {
-        method: "POST",
-        body: formData,
-      });
-      if (response.ok) {
-        // Assuming the backend returns a summary in the flash message
-        const data = await response.json();
-        setSummary(data.summary || "File uploaded successfully.");
-      } else {
-        const data = await response.json();
-        alert(data.error || "Error uploading file.");
-      }
-    } catch (error) {
-      console.error("Error:", error);
-      alert("An error occurred while uploading the file.");
-    }
-  };
-
-  const handleAsk = async () => {
-    if (!question) {
-      alert("Please enter a question.");
-      return;
-    }
-
-    try {
-      const response = await fetch("http://127.0.0.1:5000/ask", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ question }),
-      });
-      if (response.ok) {
-        const data = await response.json();
-        setAnswer(data.answer || "No answer received.");
-      } else {
-        const data = await response.json();
-        alert(data.error || "Error getting answer.");
-      }
-    } catch (error) {
-      console.error("Error:", error);
-      alert("An error occurred while asking the question.");
-    }
-  };
-
-  const handleSendMessage = async () => {
-    if (!userMessage) {
-      alert("Please enter a message.");
-      return;
-    }
-
-    try {
-      const response = await fetch("http://127.0.0.1:5000/process_message", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ message: userMessage }),
-      });
-      if (response.ok) {
-        const data = await response.json();
-        setBackendResponse(data.message || "No response received.");
-      } else {
-        const data = await response.json();
-        alert(data.error || "Error processing message.");
-      }
-    } catch (error) {
-      console.error("Error:", error);
-      alert("An error occurred while sending the message.");
-    }
-  };
+  const [summary, setSummary] = useState('');
 
   return (
-    <div>
-      <h1 className="text-3xl font-bold mb-4 text-center pt-8">Data Analyzer</h1>
-      <div className="container mx-auto p-8 bg-white">
-        <div className="flex flex-col items-center p-4">
-          <UploadSection summary={summary} setSummary={setSummary} />
-        </div>
-        <div className="flex flex-col items-center p-4">
-          <QuestionSection setAnswer={setAnswer} />
-        </div>
-        {/* <div className="flex flex-col items-center">
-          <MessageSection setBackendResponse={setBackendResponse} />
-        </div> */}
-      </div>
+    <div className="min-h-screen flex flex-col justify-center items-center bg-gradient-to-b from-blue-400 to-blue-50">
+      <ChartRAG summary={summary} setSummary={setSummary} />
     </div>
   );
 }
