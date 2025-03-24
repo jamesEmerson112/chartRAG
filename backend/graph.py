@@ -7,21 +7,41 @@ from dotenv import load_dotenv
 import plotly.graph_objects as go
 import numpy as np
 
+"""
+This module handles graph recommendations and generation based on input data.
+It uses OpenAI's API to recommend appropriate chart types and Plotly to generate charts.
+"""
+
 # Load environment variables from .env file
 load_dotenv()
 
-api_key = os.getenv('OPENAI_API_KEY')
+# Initialize OpenAI API key from environment variables
+api_key = os.getenv("OPENAI_API_KEY")
 openai.api_key = api_key
-chart_memory = ['Graph type Treemap data used: col1 = Common Varieties col2 = None col3 = None','Graph type Treemap data used: col1 = Vegetable ID col2 = None col3 = None']
-CHART_OPTIONS = ['Line', 'Bar', 'Histogram', 'Scatterplot', 'Boxplot', 'Piechart', 'Treemap']
+
+# A list to remember graph types and data columns used in previous charts.
+chart_memory = [
+    "Graph type Treemap data used: col1 = Common Varieties col2 = None col3 = None",
+    "Graph type Treemap data used: col1 = Vegetable ID col2 = None col3 = None"
+]
+
+# List of acceptable chart options for recommendation.
+CHART_OPTIONS = ["Line", "Bar", "Histogram", "Scatterplot", "Boxplot", "Piechart", "Treemap"]
+
+# List to store invalid chart types encountered during recommendation.
 invalid_chart_types = []
 
+# Dictionary containing chart requirements for different chart types.
 chart_requirements = {
     "piechart": {
         "Required Columns": ["1 Categorical column that has repeated values that will be calculated later"]
     },
     "treemap": {
-        "Required Columns": ["1 Categorical column that has repeated values that will be calculated later", "choose the column with values that repeat more", "try to pick a column that has less that 20 unique values"]
+        "Required Columns": [
+            "1 Categorical column that has repeated values that will be calculated later",
+            "choose the column with values that repeat more",
+            "try to pick a column that has less that 20 unique values"
+        ]
     },
     "Stacked Bar Chart": {
         "Required Columns": ["2 Categorical", "1 Numerical"]
@@ -54,8 +74,24 @@ chart_requirements = {
 
 
 def get_graph_recommendation(data):
+    """
+    Recommends an appropriate graph type for the given data using OpenAI's API.
+
+    Parameters:
+        data: The input data (e.g., a DataFrame) for which a graph is to be recommended.
+
+    Returns:
+        A string representing the recommended graph type.
+
+    The function constructs a prompt with available chart options, calls the OpenAI API,
+    validates the recommended chart type using validate_graph_type, and returns the valid chart type.
+    """
     print(data)
-    prompt=f"Recommend a graph for this data to best represent the data: {data}. Here are your responce options: {CHART_OPTIONS} but you cannot use these options: {invalid_chart_types}. only use one word from the list as your response"
+    prompt = (
+        f"Recommend a graph for this data to best represent the data: {data}. "
+        f"Here are your responce options: {CHART_OPTIONS} but you cannot use these options: {invalid_chart_types}. "
+        "only use one word from the list as your response"
+    )
     response = openai.chat.completions.create(
         model="gpt-4o",
         messages=[{"role": "user", "content": prompt}],
@@ -63,18 +99,34 @@ def get_graph_recommendation(data):
     )
     print(response.choices[0].message.content)
     print("wow")
-    if (validate_graph_type(data, response.choices[0].message.content)):
+    # Validate the recommended graph type; if valid, return it.
+    if validate_graph_type(data, response.choices[0].message.content):
         print("I validated" + response.choices[0].message.content)
         return response.choices[0].message.content
-    elif (len(invalid_chart_types) == len(CHART_OPTIONS)):
+    elif len(invalid_chart_types) == len(CHART_OPTIONS):
         print("I guess I chose" + invalid_chart_types[0])
         return invalid_chart_types[0]
     else:
         invalid_chart_types.append(response.choices[0].message.content)
         print(invalid_chart_types)
+        # Recursively try again if validation fails.
         get_graph_recommendation(data)
 
+
 def validate_graph_type(data, graph_type):
+    """
+    Validates if the provided graph_type is appropriate for the given data.
+
+    Parameters:
+        data: The input data for which the graph type must be validated.
+        graph_type: The graph type recommended by get_graph_recommendation.
+
+    Returns:
+        True if the data meets the requirements for the given graph type, False otherwise.
+
+    This function uses an inner helper function get_chart_requirements to fetch
+    chart-specific requirements and then asks OpenAI to verify if the data meets these requirements.
+    """
     def get_chart_requirements(chart_type):
         chart_type = chart_type.lower()
         print(chart_type)
@@ -150,7 +202,10 @@ def validate_graph_type(data, graph_type):
     if requirements == "Invalid Chart Type":
         return False
 
-    prompt = f"Does the data meet these requirements for a {graph_type}: {requirements}? Here is the data {data}. Provide a yes or no answer without extra characters, do not put a period."
+    prompt = (
+        f"Does the data meet these requirements for a {graph_type}: {requirements}? "
+        f"Here is the data {data}. Provide a yes or no answer without extra characters, do not put a period."
+    )
     response = openai.chat.completions.create(
         model="gpt-4o",
         messages=[{"role": "user", "content": prompt}],
@@ -160,15 +215,44 @@ def validate_graph_type(data, graph_type):
     print("is it valid? " + answer)
     return answer == "yes"
 
+
 def get_chart_requirements(chart_type):
+    """
+    Retrieves the predefined chart requirements for a given chart type.
+
+    Parameters:
+        chart_type: The type of chart.
+
+    Returns:
+        A dictionary containing the required columns or "Invalid Chart Type" if not defined.
+    """
     return chart_requirements.get(chart_type, "Invalid Chart Type")
 
+
 def find_best_columns(data, graph_type):
+    """
+    Determines the best columns from the data to use for the specified graph type.
+
+    Parameters:
+        data: The input data (e.g., a DataFrame).
+        graph_type: The type of graph for which columns are to be determined.
+
+    Returns:
+        A list of column names that best match the graph's requirements.
+
+    The function uses OpenAI's API to select columns based on the data's columns and chart requirements.
+    """
     requirements = get_chart_requirements(graph_type.lower())
     if requirements == "Invalid Chart Type":
         return None, None
 
-    prompt = f"Given the data {data} and the graph type {graph_type}, which columns out of these {data.columns} should be used for the graph based on these requirements: {requirements}? Do not choose columns that matches in the following list: {chart_memory}, Try to pick columns that can lead to intreasting graphs. Provide ONLY the column names comma seperated format (Ex: column_name, column_name, column_name) infering that if it's only two columns that the format is x y and if there's only one needed just state the name of the column without any other characters in the answer. do not put the answer in quotes or add a period"
+    prompt = (
+        f"Given the data {data} and the graph type {graph_type}, which columns out of these {data.columns} should be used for the graph "
+        f"based on these requirements: {requirements}? Do not choose columns that matches in the following list: {chart_memory}, "
+        "Try to pick columns that can lead to intreasting graphs. Provide ONLY the column names comma seperated format "
+        "(Ex: column_name, column_name, column_name) infering that if it's only two columns that the format is x y and if there's only one needed just state the name of the column without any other characters in the answer. "
+        "do not put the answer in quotes or add a period"
+    )
     response = openai.chat.completions.create(
         model="gpt-4o",
         messages=[{"role": "user", "content": prompt}],
@@ -180,7 +264,21 @@ def find_best_columns(data, graph_type):
     columns_list = columns.split(", ")
     return columns_list
 
+
 def generate_graph(data, graph_type):
+    """
+    Generates a graph using Plotly based on the provided data and graph type.
+
+    Parameters:
+        data: The input data (e.g., a DataFrame) for visualization.
+        graph_type: The type of graph to generate.
+
+    Returns:
+        A Plotly figure object representing the generated graph, or None if no suitable columns are found.
+
+    This function determines the best columns to use, generates a graph title using OpenAI's API,
+    and produces the appropriate chart using Plotly based on the graph type.
+    """
     columns = find_best_columns(data, graph_type)
     invalid_chart_types.clear()
 
@@ -192,7 +290,9 @@ def generate_graph(data, graph_type):
     y_axis = columns[1] if len(columns) > 1 else None
     z_axis = columns[2] if len(columns) > 2 else None
 
-    prompt = f"Generate a title for a graph of {graph_type} type with this data: {data} that has an x-axis of {x_axis} and a y-axis of {y_axis}"
+    prompt = (
+        f"Generate a title for a graph of {graph_type} type with this data: {data} that has an x-axis of {x_axis} and a y-axis of {y_axis}"
+    )
     response = client.chat.completions.create(
         model="gpt-4o",
         messages=[{"role": "user", "content": prompt}],
@@ -200,33 +300,34 @@ def generate_graph(data, graph_type):
     )
     title = response.choices[0].message.content.strip()
 
+    # Append the used columns to chart memory for future reference
     chart_memory.append(f"Graph type {graph_type} data used: col1 = {x_axis} col2 = {y_axis} col3 = {z_axis}")
     print("chart mem", chart_memory)
 
-    if graph_type == 'Line':
+    if graph_type == "Line":
         fig = px.line(data, x=data[x_axis], y=data[y_axis], title=title)
-    elif graph_type == 'Bar':
+    elif graph_type == "Bar":
         fig = px.bar(data, x=data[x_axis], y=data[y_axis], title=title)
-    elif graph_type == 'Histogram':
+    elif graph_type == "Histogram":
         fig = px.histogram(data, x=data[x_axis], title=title)
-    elif graph_type == 'Scatterplot':
+    elif graph_type == "Scatterplot":
         slope, intercept = np.polyfit(data[x_axis], data[y_axis], 1)
         line = slope * data[x_axis] + intercept
         fig = px.scatter(data, x=data[x_axis], y=data[y_axis], title=title)
-        fig.add_trace(go.Scatter(x=data[x_axis], y=line, mode='lines', name='Trendline', line=dict(color='red')))
-    elif graph_type == 'Boxplot':
+        fig.add_trace(go.Scatter(x=data[x_axis], y=line, mode="lines", name="Trendline", line=dict(color="red")))
+    elif graph_type == "Boxplot":
         fig = px.box(data, x=data[x_axis], y=data[y_axis], title=title)
-    elif graph_type == 'Heatmap':
+    elif graph_type == "Heatmap":
         fig = px.density_heatmap(data, x=data[x_axis], y=data[y_axis], z=data[z_axis], title=title)
-    elif graph_type == 'Bubble Chart':
+    elif graph_type == "Bubble Chart":
         fig = px.scatter(data, x=data[x_axis], y=data[y_axis], size=data[z_axis], title=title)
-    elif graph_type == 'Piechart':
+    elif graph_type == "Piechart":
         counts = data[x_axis].value_counts()
         fig = px.pie(counts, names=counts.index, values=counts.values, title=title)
-    elif graph_type == 'Treemap':
+    elif graph_type == "Treemap":
         counts = data[x_axis].value_counts().reset_index()
-        counts.columns = [x_axis, 'count']
-        fig = px.treemap(counts, path=[x_axis], values='count', title=title)
+        counts.columns = [x_axis, "count"]
+        fig = px.treemap(counts, path=[x_axis], values="count", title=title)
     else:
         fig = px.bar(data, x=data[x_axis], y=data[y_axis], title=title)
 
