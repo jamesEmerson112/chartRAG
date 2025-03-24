@@ -69,7 +69,7 @@ def details():
     print("FIG")
     print(fig)
     graph = fig
-    graph_html = fig.to_html(full_html=True, include_plotlyjs="cdn")
+    graph_html = fig.to_html(full_html=False, include_plotlyjs="cdn")
     if graph_html:
         print("yes there is a graph")
     html_output = f"<html><body><h1>Graph Debug Output</h1>{graph_html}<hr><h2>Table</h2>{table}</body></html>"

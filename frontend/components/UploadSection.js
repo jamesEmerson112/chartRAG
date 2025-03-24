@@ -15,6 +15,11 @@ export default function UploadSection({ summary, setSummary }) {
   const [details, setDetails] = useState(null);
   const fileInputRef = useRef(null);
 
+  const extractBodyContent = (html) => {
+    const match = html.match(/<body[^>]*>([\s\S]*?)<\/body>/i);
+    return match ? match[1] : html;
+  };
+
   /**
    * Handles the file input change event.
    * Automatically uploads the selected file.
@@ -81,6 +86,9 @@ export default function UploadSection({ summary, setSummary }) {
           const detailsResponse = await fetch("http://127.0.0.1:5000/details");
           if (detailsResponse.ok) {
             const detailsData = await detailsResponse.json();
+            detailsData.graph_html = extractBodyContent(detailsData.graph_html);
+            console.log("HELLO JAMES");
+            console.log(detailsData.graph_html);
             setDetails(detailsData);
           } else {
             console.error("Failed to fetch details");
@@ -115,20 +123,36 @@ export default function UploadSection({ summary, setSummary }) {
       {isUploading && (
         <div className="ml-4 w-6 h-6 border-4 border-blue-600 border-t-transparent border-l-transparent rounded-full animate-spin"></div>
       )}
-      {summary && (
-        <div className="mt-4">
-          <h3 className="text-lg font-semibold">Summary:</h3>
-          <p className="whitespace-pre-wrap">{summary}</p>
+      {summary && details ? (
+        <div className="mt-4 grid grid-cols-2 gap-4">
+          <div>
+            <h3 className="text-lg font-semibold">Summary:</h3>
+            <p className="whitespace-pre-wrap">{summary}</p>
+          </div>
+          <div>
+            <h3 className="text-lg font-semibold">Graph:</h3>
+              <p>Graph HTML body is printed in console.</p>
+            <h3 className="text-lg font-semibold mt-4">Data Table:</h3>
+            <div dangerouslySetInnerHTML={{ __html: details.table }} />
+          </div>
         </div>
-      )}
-      {details && (
-        <div className="mt-4">
-          <h3 className="text-lg font-semibold">Graph:</h3>
-          <div dangerouslySetInnerHTML={{ __html: details.graph_html }} />
-          <h3 className="text-lg font-semibold mt-4">Data Table:</h3>
-          <div dangerouslySetInnerHTML={{ __html: details.table }} />
-        </div>
+      ) : (
+        <>
+          {summary && (
+            <div className="mt-4">
+              <h3 className="text-lg font-semibold">Summary:</h3>
+              <p className="whitespace-pre-wrap">{summary}</p>
+            </div>
+          )}
+          {details && (
+            <div className="mt-4">
+              <h3 className="text-lg font-semibold">Graph:</h3>
+              <p>Graph HTML body is printed in console.</p>
+              <h3 className="text-lg font-semibold mt-4">Data Table:</h3>
+              <div dangerouslySetInnerHTML={{ __html: details.table }} />
+            </div>
+          )}
+        </>
       )}
     </div>
   );
-}

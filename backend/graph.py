@@ -320,7 +320,14 @@ def generate_graph(data, graph_type):
         # Convert the x_axis and y_axis data to numeric values to avoid type errors
         x_data = pd.to_numeric(data[x_axis], errors='coerce')
         y_data = pd.to_numeric(data[y_axis], errors='coerce')
-        slope, intercept = np.polyfit(x_data, y_data, 1)
+        # Filter out NaN values to ensure valid inputs for linear regression
+        valid_mask = x_data.notna() & y_data.notna()
+        x_data_valid = x_data[valid_mask]
+        y_data_valid = y_data[valid_mask]
+        if len(x_data_valid) < 2:
+            slope, intercept = 0, 0
+        else:
+            slope, intercept = np.polyfit(x_data_valid, y_data_valid, 1)
         line = slope * data[x_axis] + intercept
         fig = px.scatter(data, x=data[x_axis], y=data[y_axis], title=title)
         fig.add_trace(go.Scatter(x=data[x_axis], y=line, mode="lines", name="Trendline", line=dict(color="red")))
