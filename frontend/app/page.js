@@ -32,7 +32,6 @@ export default function Home() {
         body: formData,
       });
       if (response.ok) {
-        // Assuming the backend returns a summary in the flash message
         const data = await response.json();
         setSummary(data.summary || "File uploaded successfully.");
       } else {
@@ -100,18 +99,23 @@ export default function Home() {
   };
 
   return (
-    <div>
-      <h1 className="text-3xl font-bold mb-4 text-center pt-8">Data Analyzer</h1>
-      <div className="container mx-auto p-8 bg-white">
-        <div className="flex flex-col items-center p-4">
+    <div className="min-h-screen flex flex-col justify-center items-center bg-gradient-to-b from-green-100 to-white">
+      <h1 className="text-5xl font-bold mb-4 text-center">ChartRAG</h1>
+      <p className="text-lg mb-8 text-center">
+        Upload a csv file and our ai will summarise for you
+      </p>
+      <div className="bg-white shadow-md rounded-lg p-8">
+        <div className="flex flex-col items-center">
           <UploadSection summary={summary} setSummary={setSummary} />
         </div>
-        <div className="flex flex-col items-center p-4">
-          <QuestionSection setAnswer={setAnswer} />
+        <div className="flex flex-col items-center mt-4">
+          <button
+            onClick={handleUpload}
+            className="bg-blue-500 text-white px-4 py-2 rounded mt-4"
+          >
+            Upload Data
+          </button>
         </div>
-        {/* <div className="flex flex-col items-center">
-          <MessageSection setBackendResponse={setBackendResponse} />
-        </div> */}
       </div>
     </div>
   );
