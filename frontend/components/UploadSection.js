@@ -1,15 +1,33 @@
 // frontend/components/UploadSection.js
+
 "use client";
 
 import { useState } from "react";
 
+/**
+ * UploadSection component allows users to upload a CSV file
+ * and displays a summary of the uploaded data.
+ *
+ * @param {string} summary - The summary of the uploaded file.
+ * @param {function} setSummary - Function to update the summary state.
+ */
 export default function UploadSection({ summary, setSummary }) {
   const [file, setFile] = useState(null);
 
+  /**
+   * Handles the file input change event.
+   * Sets the selected file to the state.
+   *
+   * @param {object} e - The event object.
+   */
   const handleFileChange = (e) => {
     setFile(e.target.files[0]);
   };
 
+  /**
+   * Handles the upload button click event.
+   * Uploads the selected file to the server and updates the summary.
+   */
   const handleUpload = async () => {
     if (!file) {
       alert("Please select a file first.");
@@ -36,15 +54,17 @@ export default function UploadSection({ summary, setSummary }) {
     }
   };
 
-      return (
-        <div className="mb-8 bg-background text-foreground">
-      <h2 className="text-xl font-semibold mb-2">Upload CSV File</h2>
+  return (
+    <div className="mb-8 bg-background text-foreground">
+      <p className="text-lg mb-8 text-center">
+        Upload a csv file and our ai will summarise for you
+      </p>
       <input type="file" accept=".csv" onChange={handleFileChange} />
       <button
         onClick={handleUpload}
         className="ml-2 px-4 py-2 bg-blue-500 text-white rounded"
       >
-        Upload
+        Upload Data
       </button>
       {summary && (
         <div className="mt-4">
